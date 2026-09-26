@@ -3203,7 +3203,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   /* ---------------- selects ---------------------------------------------- */
   UI.opt = (v, label, sel) => `<option value="${esc(v)}" ${String(v) === String(sel) ? 'selected' : ''}>${esc(label)}</option>`;
   UI.monthOpts = (sel) => [...Array(12).keys()].map((i) => UI.opt(i + 1, FS.Period.monthName(i + 1, FS.I18n.lang), sel)).join('');
-  UI.yearOpts = (years, sel) => years.map((y) => UI.opt(y, y, sel)).join('');
+  UI.yearOpts = (years, sel) => [...new Set([...years, ...(sel != null && sel !== '' && !isNaN(+sel) ? [+sel] : [])])].sort((a, b) => a - b).map((y) => UI.opt(y, y, sel)).join('');
   /** grouped sub-type select (Type › Group › Sub-type) */
   UI.subTypeOpts = (sel) => {
     const L = FS.I18n.lang; let h = UI.opt('', `— ${t('unclassified')} —`, sel || '');
@@ -5163,6 +5163,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       const last = this.engine().lastPeriod(); let r = this.rawRange();
       // a period that starts after the last imported month has no data: move to the latest data
       if (last && P.cmp(r.from, last) > 0) { defaultPeriod(); r = this.rawRange(); }
+      else if (!last) { const ys = this.engine().years(); if (ys.length && !ys.includes(r.from.y) && !ys.includes(r.to.y)) { defaultPeriod(); r = this.rawRange(); } }
       return P.clip(r, last);
     },
     targets() { return FS.Analytics.targets(this.state.companyId); },
@@ -5172,7 +5173,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   FS.App = App;
 
   function defaultPeriod() {
-    const E = App.engine(); const last = E.lastPeriod() || { y: new Date().getFullYear(), m: new Date().getMonth() + 1 };
+    const E = App.engine(); const ys = E.years();
+    // latest imported month; with only an opening balance → that year; with no data → today
+    const last = E.lastPeriod() || (ys.length ? { y: ys[ys.length - 1], m: 12 } : { y: new Date().getFullYear(), m: new Date().getMonth() + 1 });
     App.state.period = { mode: 'ytd', year: last.y, month: last.m, quarter: P.quarterOf(last.m), fromY: last.y, fromM: 1, toY: last.y, toM: last.m };
   }
 
