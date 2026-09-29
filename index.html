@@ -1114,7 +1114,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ci_chartParentMissing: ['Account {acct}: parent {parent} not found.', 'الحساب {acct}: الحساب الأب {parent} غير موجود.'],
     ci_chartGroupHasData: ['Account {acct} already has imported balances but is marked roll-up. Future postings on it will be rejected.', 'الحساب {acct} عليه أرصدة مستوردة لكنه مُعلَّم تجميعي؛ أي أرصدة عليه مستقبلاً سترفض.'],
     ie_groupPosting: ['{period}: roll-up account {acct} carries an amount ({net}) that is not the total of its sub-accounts. Re-export the trial balance at detail level, or move the posting in your accounting system to a sub-account.', '{period}: الحساب التجميعي {acct} عليه مبلغ ({net}) لا يساوي مجموع حساباته الفرعية. صدّر الميزان على مستوى الحسابات التفصيلية، أو انقل القيد في نظامك المحاسبي إلى حساب فرعي.'],
-    iw_groupTotals: ['{period}: {count} roll-up subtotal line(s) ignored ({codes}) — they equal the sum of their sub-accounts.', '{period}: تم تجاهل {count} سطر إجمالي لحسابات تجميعية ({codes}) لأنها تساوي مجموع حساباتها الفرعية.'],
+    iw_groupTotals: ['{period}: {count} roll-up line(s) ignored ({codes}) — subtotals of their sub-accounts, or entries posted and reversed on the roll-up account (debit = credit). Balances are not affected.', '{period}: تم تجاهل {count} سطر لحسابات تجميعية ({codes}) — إما إجماليات لحساباتها الفرعية أو قيود سُجّلت وعُكست على الحساب التجميعي (المدين = الدائن). لا تأثير على الأرصدة.'],
     ac_chartImported: ['Chart of accounts imported', 'استيراد دليل الحسابات'],
     /* ---- Firebase (cloud) ---- */
     email: ['Email', 'البريد الإلكتروني'],
@@ -2442,7 +2442,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         for (const l of grp) {
           const a = E.acc.get(l.accountId); const kids = leafIds(a.code);
           const kidsNet = FS.sum(kids, (id) => netOf.get(id) || 0);
-          if (kids.length && FS.eq(l.dr - l.cr, kidsNet, 1)) skipped.push(l);
+          if (FS.eq(l.dr - l.cr, 0, 0.01) || (kids.length && FS.eq(l.dr - l.cr, kidsNet, 1))) skipped.push(l); // net-zero activity or a subtotal: no effect on balances
           else err('groupPosting', { acct: l.code, y: g.y, m: g.m, net: l.dr - l.cr });
         }
         if (skipped.length) { rows = rows.filter((l) => !skipped.includes(l)); warn('groupTotals', { y: g.y, m: g.m, count: skipped.length, codes: skipped.map((l) => l.code) }); }
